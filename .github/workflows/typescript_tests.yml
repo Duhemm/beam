@@ -42,8 +42,6 @@ on:
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.issue.number || github.event.pull_request.head.label || github.sha || github.head_ref || github.ref }}-${{ github.event.schedule || github.event.comment.id || github.event.sender.login}}'
   cancel-in-progress: true
-env:
-  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 jobs:
   typescript_unit_tests:
     name: 'TypeScript Unit Tests'
@@ -62,29 +60,25 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '18'
-      - name: Install Develocity npm Agent
-        run: npm exec -y -- pacote extract @gradle-tech/develocity-agent@2.0.2 ~/.node_libraries/@gradle-tech/develocity-agent
-        working-directory: ./sdks/typescript
+      - name: Setup Develocity for npm
+        uses: Duhemm/develocity-actions/setup-npm@e7b2430932d3ebd7aa5a2cd572a7df3bc860bc3b
+        with:
+          develocity-url: https://dv-helm-standalone-unstable-main.grdev.net
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          develocity-injection-enabled: true
+          develocity-npm-agent-url-override: https://develocity-npm-pkgs.grdev.net/gradle-develocity-agent-3.0.0-branch-main-20251113145013.tgz
       - run: npm ci
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
       - run: npm run build
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
       - run: npm run prettier-check
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
         if: contains(matrix.os, 'ubuntu-20.04')
 #      - run: npm run codecovTest
 #        working-directory: ./sdks/typescript
 #        if: ${{ matrix.os == 'ubuntu-latest' }}
       - run: npm test
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
 #        if: ${{ matrix.os != 'ubuntu-latest' }}
   typescript_xlang_tests:
     name: 'TypeScript xlang Tests'
@@ -104,9 +98,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '18'
-      - name: Install Develocity npm Agent
-        run: npm exec -y -- pacote extract @gradle-tech/develocity-agent@2.0.2 ~/.node_libraries/@gradle-tech/develocity-agent
-        working-directory: ./sdks/typescript
+      - name: Setup Develocity for npm
+        uses: Duhemm/develocity-actions/setup-npm@e7b2430932d3ebd7aa5a2cd572a7df3bc860bc3b
+        with:
+          develocity-url: https://dv-helm-standalone-unstable-main.grdev.net
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          develocity-injection-enabled: true
+          develocity-npm-agent-url-override: https://develocity-npm-pkgs.grdev.net/gradle-develocity-agent-3.0.0-branch-main-20251113145013.tgz
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -118,17 +116,12 @@ jobs:
           pip install -e .
       - run: npm ci
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
       - run: npm run build
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
       - run: npm test -- --grep "@xlang" --grep "@ulr"
         working-directory: ./sdks/typescript
         env:
           BEAM_SERVICE_OVERRIDES: '{"python:*": "python"}'
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
 
   check_gcp_variables:
     timeout-minutes: 5
@@ -167,9 +160,13 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '18'
-      - name: Install Develocity npm Agent
-        run: npm exec -y -- pacote extract @gradle-tech/develocity-agent@2.0.2 ~/.node_libraries/@gradle-tech/develocity-agent
-        working-directory: ./sdks/typescript
+      - name: Setup Develocity for npm
+        uses: Duhemm/develocity-actions/setup-npm@e7b2430932d3ebd7aa5a2cd572a7df3bc860bc3b
+        with:
+          develocity-url: https://dv-helm-standalone-unstable-main.grdev.net
+          develocity-access-key: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+          develocity-injection-enabled: true
+          develocity-npm-agent-url-override: https://develocity-npm-pkgs.grdev.net/gradle-develocity-agent-3.0.0-branch-main-20251113145013.tgz
       - name: Install python
         uses: actions/setup-python@v5
         with:
@@ -181,12 +178,8 @@ jobs:
           pip install -e ".[gcp]"
       - run: npm ci
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
       - run: npm run build
         working-directory: ./sdks/typescript
-        env:
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
       - run: npm test -- --grep "@dataflow"
         working-directory: ./sdks/typescript
         env:
@@ -194,4 +187,3 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_REGION: ${{ secrets.GCP_REGION }}
           GCP_TESTING_BUCKET: 'gs://${{ secrets.GCP_TESTING_BUCKET }}/tmp'
-          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
